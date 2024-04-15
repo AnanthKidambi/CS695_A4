@@ -15,4 +15,5 @@ if __name__ == "__main__":
     json_orig = json.loads(base64.b64decode(a).decode('utf-8'))
     json_obj = {'method' : json_orig['method'], 'path' : json_orig['path'], 'json' : json_orig['json']}
     ret = handler(json_obj)
+    ret = {'id': json_orig['id'], 'response': ret}
     requests.post(f"http://{json_orig['server_ip']}:{json_orig['server_port']}/{json_orig['page']}/{json_orig['trigger']}/response", json=ret)

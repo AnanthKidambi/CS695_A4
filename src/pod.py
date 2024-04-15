@@ -79,8 +79,6 @@ def send_file_to_pod(api_instance: kubernetes.client.CoreV1Api, pod_name, pod_na
                 stdout=True, tty=False,
                 _preload_content=False)
 
-    # file = open(tarf, "rb")
-
     buffer = b''
     # tar the source file and read it into the buffer
     with TemporaryFile() as tar_buffer:
@@ -100,7 +98,6 @@ def send_file_to_pod(api_instance: kubernetes.client.CoreV1Api, pod_name, pod_na
             print("STDERR: %s" % resp.read_stderr())
         if commands:
             c = commands.pop(0)
-            #print("Running command... %s\n" % c)
             resp.write_stdin(c)
         else:
             break
@@ -116,35 +113,13 @@ def call_func_in_pod(api_instance, pod_name, namespace, json_args, func_cmd = ['
     
     to_write = base64.b64encode(json.dumps(json_args).encode('utf-8')) + b'\n'
     resp.write_stdin(to_write)
-    print(to_write)
-    print(json_args)
-    # while resp.is_open():
-    #     resp.update(timeout=1)
-    #     if resp.peek_stdout():
-    #         print("STDOUT: %s" % resp.read_stdout())
-    #     if resp.peek_stderr():
-    #         print("STDERR: %s" % resp.read_stderr())
-    #     if to_write is not None:
-    #         to_write = None
-    #     else:
-    #         break
     resp.close()
 
 if __name__ == "__main__":
     print('Kubernetes Version: ', kubernetes.__version__)
     
     config.load_kube_config('/home/ananthkk/admin.conf')
-    
     v1 = client.CoreV1Api()
-    
-    # create_pod(v1, 'test1', 'mytest', ['image_test:latest' for _ in range(1)], [[] for _ in range(1)], [[]])
-    # sleep(5)
-    # v1.create_namespace(client.V1Namespace(metadata=client.V1ObjectMeta(name='mytest')))
-    # create_pod(v1, 'test1', 'mytest', ['ananthkidambi/cs695:test_app' for _ in range(1)], [['bash', '-c'] for _ in range(1)], [['sleep infinity'] for i in range(1)])
-    # sleep(5)
-    
-    # v1.connect_get_namespaced_pod_exec('test1', 'mytest', command=['/bin/bash', '-c',  'echo Hello World'], stderr=True, stdin=True, stdout=True, tty=False, _preload_content=False)
-    # send_file_to_pod(v1, 'test1', 'mytest', 'pod.py', '/foo')
     exec_on_pod(v1, 'test1', 'mytest', ['/bin/bash'], ['-c', 'ls /'])
     print("Listing pods with their IPs:")
     ret = v1.list_pod_for_all_namespaces(watch=False)

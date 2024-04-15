@@ -15,6 +15,7 @@ swapoff -a
 # reset the old init
 kubeadm reset --cri-socket $CRI_SOCK 
 rm -rf /etc/cni/net.d
+#ipvsadm --clear
 
 # init
 systemctl enable kubelet
