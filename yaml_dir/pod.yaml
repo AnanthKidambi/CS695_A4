@@ -7,17 +7,12 @@ spec:
   nodeSelector:
     kubernetes.io/os: linux
   containers:
-  - name: test
-    image: img_test
-    imagePullPolicy: IfNotPresent
-    volumeMounts:
-    - mountPath: /foo
-      name: example-volume
-    command: [ "/bin/bash", "-c", "--" ]
-    args: [ "sleep infinity" ]
-  volumes:
-  - name: example-volume
-    # mount /data/foo, but only if that directory already exists
-    hostPath:
-      path: /home/jvaditya/clown # directory location on host
-      type: Directory # this field is optional
+  - name: my-app
+    image: 10.129.27.120:5000/my_app
+    ports:
+    - containerPort: 80        
+    resources:
+      limits:
+        cpu: "0.5"
+        memory: "512Mi"
+    command: ["python3", "src/main.py", "9376"]

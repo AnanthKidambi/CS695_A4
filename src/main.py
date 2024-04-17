@@ -6,6 +6,7 @@ import subprocess
 from database import ControlDB, ConditionVarStore
 import json
 import base64
+from package import DOCKER_REGISTRY_IP, DOCKER_REGISTRY_PORT
 
 app = Flask(__name__)
 config.load_kube_config('/home/ananthkk/admin.conf')
@@ -40,8 +41,8 @@ def response(page, trigger):
     return "Response received"
 
 if __name__ == '__main__':
-    # create a pod with the image ananthkidambi/cs695:test_app
-    create_pod(v1, 'test1', 'mytest', ['ananthkidambi/cs695:test_app' for _ in range(1)], [['bash', '-c'] for _ in range(1)], [['sleep infinity'] for _ in range(1)])
+    # create a pod with the image 
+    create_pod(v1, 'test1', 'mytest', [f'{DOCKER_REGISTRY_IP}:{DOCKER_REGISTRY_PORT}/test_app' for _ in range(1)], [['bash', '-c'] for _ in range(1)], [['sleep infinity'] for _ in range(1)])
     conditionVarStore.add_organization('mytest')
     database.add_organization('mytest')
     database.add_endpoint('mytest', 'test1')

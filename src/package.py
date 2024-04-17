@@ -5,6 +5,9 @@ import os
 import shutil
 import docker
 
+DOCKER_REGISTRY_IP = "10.129.27.120"
+DOCKER_REGISTRY_PORT = 5000
+
 def check_package(app_dir: str):
     # check if the app_dir exists
     if not path.exists(app_dir):
@@ -23,18 +26,22 @@ def check_package(app_dir: str):
     if path.exists(path.join(app_dir, "src", ".interface.py")):
         raise FileExistsError(f"File .interface.py not allowed in {path.join(app_dir, 'src')}.")
     
-def package(app_dir: str, docker_repo: str, docker_tag: str = None, push = True):
-    check_package(app_dir)
+def package(app_dir: str, docker_repo: str, docker_tag: str = None, push = True, add_interface=True, check_files=True):
+    if check_files:
+        check_package(app_dir)
     # build docker container with the app_dir
     client = docker.from_env()
     if docker_tag is None:
         docker_tag = app_dir.split("/")[-1] 
-    docker_image = f"{docker_repo}:{docker_tag}"
+    docker_image = f"{docker_repo}/{docker_tag}"
     print(f'Building docker image {docker_image}...')
     # copy src/.interface.py to the app_dir/src directory
-    shutil.copyfile(path.join("src", ".interface.py"), path.join(app_dir, "src", ".interface.py"))
-    client.images.build(path=app_dir, tag=docker_image)
-    os.remove(path.join(app_dir, "src", ".interface.py"))
+    if add_interface:
+        shutil.copyfile(path.join("src", ".interface.py"), path.join(app_dir, "src", ".interface.py"))
+    client.images.build(path=app_dir, tag=docker_tag)
+    os.system(f'docker image tag {docker_tag} {docker_image}')
+    if add_interface:
+        os.remove(path.join(app_dir, "src", ".interface.py"))
     # push docker container to docker repo
     if push:
         print(f'Pushing docker image {docker_image}...')
@@ -43,4 +50,4 @@ def package(app_dir: str, docker_repo: str, docker_tag: str = None, push = True)
     return docker_image
     
 if __name__ == "__main__":
-    package('./images/test_app', 'ananthkidambi/cs695')
+    package('./images/test_app', f'{DOCKER_REGISTRY_IP}:{DOCKER_REGISTRY_PORT}')

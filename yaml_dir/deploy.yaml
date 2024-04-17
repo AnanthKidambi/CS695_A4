@@ -1,0 +1,28 @@
+# deploy an app my-app with 2 replicas
+
+# The deploy.yaml file is a bit more complex than the service.yaml file. It has two parts: the service and the deployment. The service part is similar to the service.yaml file, but the deployment part is new. The deployment part is used to deploy an app with two replicas. The deployment part is defined as follows:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app1
+  template:
+    metadata:
+      labels:
+        app: my-app1
+    spec:
+      containers:
+      - name: my-app
+        image: 10.129.27.120:5000/test_app
+        ports:
+        - containerPort: 9376     
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "512Mi"
+        command: ["python3", "src/.interface.py", "9376", "org1"]
+        # command: ["sleep", "infinity"]

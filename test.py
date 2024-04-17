@@ -3,7 +3,7 @@ import threading
 import time
 
 # spawn multiple threads and send http requests to the server
-SERVER_IP = '192.168.164.55'
+SERVER_IP = '10.96.9.76'
 SERVER_PORT = 8887
 NUM_THREADS = 10
 NUM_ITER = 10

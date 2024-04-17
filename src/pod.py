@@ -1,5 +1,5 @@
 import kubernetes
-from kubernetes import client, config
+from kubernetes import client, config, watch
 import yaml
 from kubernetes.stream import stream
 import tarfile
@@ -115,15 +115,25 @@ def call_func_in_pod(api_instance, pod_name, namespace, json_args, func_cmd = ['
     resp.write_stdin(to_write)
     resp.close()
 
+def wait_for_pod_ready(api_instance, pod_name, pod_namespace):
+    w = watch.Watch()
+    for event in w.stream(api_instance.list_namespaced_pod, namespace=pod_namespace):
+        if event['object'].metadata.name == pod_name:
+            if event['object'].status.phase == 'Running':
+                print('Pod is ready')
+                break
+    w.stop()
+
 if __name__ == "__main__":
     print('Kubernetes Version: ', kubernetes.__version__)
     
     config.load_kube_config('/home/ananthkk/admin.conf')
     v1 = client.CoreV1Api()
-    exec_on_pod(v1, 'test1', 'mytest', ['/bin/bash'], ['-c', 'ls /'])
+    # exec_on_pod(v1, 'test1', 'mytest', ['/bin/bash'], ['-c', 'ls /'])
     print("Listing pods with their IPs:")
     ret = v1.list_pod_for_all_namespaces(watch=False)
     for i in ret.items:
         print("%s\t%s\t%s" % (i.status.pod_ip, i.metadata.namespace, i.metadata.name))
+        __import__("IPython").embed()
 
     print("Ended.")
