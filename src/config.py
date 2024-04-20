@@ -1,0 +1,5 @@
+KUBECONF = '/home/ananthkk/admin.conf'
+
+SERVER_PORT = 8887
+SERVICE_PORT = 80
+TARGET_PORT = 9376

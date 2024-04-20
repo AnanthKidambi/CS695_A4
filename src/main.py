@@ -1,51 +1,54 @@
-import time
 from flask import Flask, request
-from pod import create_pod, call_func_in_pod, exec_on_pod
 from kubernetes import client, config
-import subprocess
-from database import ControlDB, ConditionVarStore
+from database import ControlDB
+import requests
 import json
-import base64
 from package import DOCKER_REGISTRY_IP, DOCKER_REGISTRY_PORT
-
-app = Flask(__name__)
-config.load_kube_config('/home/ananthkk/admin.conf')
-v1 = client.CoreV1Api()
-
-def get_ip():
-    # run hostname -I and get the first ip address
-    return subprocess.check_output(['hostname', '-I']).decode('utf-8').split()[0]
+from utils import get_ip, register_endpoint
+from config import SERVER_PORT, KUBECONF
 
 SERVER_IP = get_ip()
-SERVER_PORT = 8887
+
+app = Flask(__name__)
+
+config.load_kube_config(KUBECONF)
+v1_core = client.CoreV1Api()
+v1_app = client.AppsV1Api()
+
 database = ControlDB()
-conditionVarStore = ConditionVarStore()
 
 @app.route('/<page>/<trigger>', methods=['GET', 'POST'])
 def index(page, trigger):
+    # try:
     if not database.check_endpoint(page, trigger):
-        return 404
-    id = database.reserve_next_available_id(page)
-    to_send = {'id': id, 'server_ip': SERVER_IP, 'server_port': SERVER_PORT, 'page': page, 'trigger': trigger, 'method': request.method, 'path': request.path, 'json': request.get_json(silent=True)}
-    call_func_in_pod(v1, trigger, page, to_send)
-    conditionVarStore.wait_for_condition_var(page, id)
-    response = database.get_val_and_delete(page, id)
-    response = json.loads(base64.b64decode(response.encode('ascii')).decode('utf-8'))
-    return response
+        return "404"
+    to_send = {'method': request.method, 'path': request.path, 'json': request.get_json(silent=True)}
+    res = None
+    port = database.get_endpoint_port(page, trigger)
+    url = f'http://localhost:{port}'
+    if request.method == 'GET':
+        res = requests.get(url, json=to_send['json'])
+    elif request.method == 'POST':
+        res = requests.post(url, json=to_send['json'])
+    else:
+        return "405"
+    return json.loads(res.text)
     
-@app.route('/<page>/<trigger>/response', methods=['POST'])
-def response(page, trigger):
-    response_json = request.get_json(silent=True)
-    database.insert_val(page, response_json['id'], base64.b64encode(json.dumps(response_json['response']).encode('utf-8')).decode('ascii'))
-    conditionVarStore.wakeup_condition_var(page, response_json['id'])
-    return "Response received"
+@app.route('/add_endpoint', methods=['POST'])
+def index1():
+    # try:
+    payload = request.get_json(silent=True)
+    if payload is None:
+        return "400"
+    org = payload['org']
+    endpoint = payload['endpoint']
+    image = payload['image']
+    replicas = int(payload['replicas'])
+    if database.check_endpoint(org, endpoint):
+        return "409"
+    register_endpoint(v1_core, v1_app, org, endpoint, database, image, replicas)
+    return "200"
 
 if __name__ == '__main__':
-    # create a pod with the image 
-    create_pod(v1, 'test1', 'mytest', [f'{DOCKER_REGISTRY_IP}:{DOCKER_REGISTRY_PORT}/test_app' for _ in range(1)], [['bash', '-c'] for _ in range(1)], [['sleep infinity'] for _ in range(1)])
-    conditionVarStore.add_organization('mytest')
-    database.add_organization('mytest')
-    database.add_endpoint('mytest', 'test1')
-    app.run(host=SERVER_IP, port=SERVER_PORT)
-    
-    
+    register_endpoint(v1_core, v1_app, 'adi', 'abcd', database, f'{DOCKER_REGISTRY_IP}:{DOCKER_REGISTRY_PORT}/test_app')
+    # app.run(host=SERVER_IP, port=SERVER_PORT)
