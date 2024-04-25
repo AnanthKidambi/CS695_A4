@@ -66,7 +66,7 @@ def index1():
     if not register_endpoint(v1_core, v1_app, org, endpoint, database, image, replicas):
         abort(409)
     else:
-        is_deployed[(org, endpoint)] = (rwlock.RWLockWrite(), True)
+        is_deployed[(org, endpoint)] = [rwlock.RWLockWrite(), True]
         access_times[(org, endpoint)] = time.time()
     return "200"
 
