@@ -39,7 +39,10 @@ def index(page, trigger):
     if to_deploy:
         with is_deployed[(page, trigger)][0].gen_wlock():
             if not is_deployed[(page, trigger)][1]:
-                create_deployment(v1_app, trigger, page, image, replicas, TARGET_PORT, ["python3", "/src/.interface.py", f'{TARGET_PORT}', "hello"])
+                try:
+                    create_deployment(v1_app, trigger, page, image, replicas, TARGET_PORT, ["python3", "/src/.interface.py", f'{TARGET_PORT}', "hello"])
+                except:
+                    print("Deployment already exists")
                 is_deployed[(page, trigger)][1] = True           
 
     access_times[(page, trigger)] = time.time()
