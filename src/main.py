@@ -1,3 +1,4 @@
+import multiprocessing
 from flask import Flask, request, abort
 from kubernetes import client, config
 from database import ControlDB
@@ -5,7 +6,11 @@ import requests
 import json
 from package import DOCKER_REGISTRY_IP, DOCKER_REGISTRY_PORT
 from utils import get_ip, register_endpoint
-from config import SERVER_PORT, KUBECONF, SERVICE_PORT
+from config import DATABASE_FILE, SERVER_PORT, KUBECONF, SERVICE_PORT
+from multiprocessing_utils import SharedLock
+from kube_utils import create_deployment
+import time
+from optimizer import is_deployed, access_times, optimize_deployments
 
 SERVER_IP = get_ip()
 
@@ -15,7 +20,7 @@ config.load_kube_config(KUBECONF)
 v1_core = client.CoreV1Api()
 v1_app = client.AppsV1Api()
 
-database = ControlDB()
+database = ControlDB(file = DATABASE_FILE)
 
 @app.route('/<page>/<trigger>', methods=['GET', 'POST'])
 def index(page, trigger):
@@ -24,8 +29,20 @@ def index(page, trigger):
         abort(404)
     to_send = {'method': request.method, 'path': request.path, 'json': request.get_json(silent=True)}
     res = None
-    addr = database.get_endpoint_ip(page, trigger)
+    addr, image, replicas = database.get_endpoint_ip(page, trigger)
     url = f'http://{addr}:{SERVICE_PORT}'
+    # Check if the endpoint is deployed
+    to_deploy = False
+    with is_deployed[(page, trigger)][0]:
+        if not is_deployed[(page, trigger)][1]:
+            to_deploy = True
+    if to_deploy:
+        with is_deployed[(page, trigger)][0].exclusive():
+            if not is_deployed[(page, trigger)][1]:
+                create_deployment(v1_app, trigger, page, image, replicas)
+                is_deployed[(page, trigger)] = (SharedLock(), True)            
+
+    access_times[(page, trigger)] = time.time()
     if request.method == 'GET':
         res = requests.get(url, json=to_send['json'])
     elif request.method == 'POST':
@@ -36,7 +53,6 @@ def index(page, trigger):
     
 @app.route('/add_endpoint', methods=['POST'])
 def index1():
-    # try:
     payload = request.get_json(silent=True)
     if payload is None:
         abort(404)
@@ -44,11 +60,14 @@ def index1():
     endpoint = payload['endpoint']
     image = payload['image']
     replicas = int(payload['replicas'])
-    if database.check_endpoint(org, endpoint):
+    if not register_endpoint(v1_core, v1_app, org, endpoint, database, image, replicas):
         abort(409)
-    register_endpoint(v1_core, v1_app, org, endpoint, database, image, replicas)
+    else:
+        is_deployed[(org, endpoint)] = (SharedLock(), True)
+        access_times[(org, endpoint)] = time.time()
     return "200"
 
 if __name__ == '__main__':
    #  register_endpoint(v1_core, v1_app, 'adi', 'abcd', database, f'{DOCKER_REGISTRY_IP}:{DOCKER_REGISTRY_PORT}/test_app')
+    multiprocessing.Process(target=optimize_deployments, args=(v1_core, v1_app)).start()
     app.run(host=SERVER_IP, port=SERVER_PORT)

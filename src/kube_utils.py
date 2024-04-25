@@ -1,6 +1,4 @@
 from kubernetes import client, config, watch
-import os
-import time
 
 def create_service(api_instance, name, namespace, app_name, port, target_port):
     metadata = client.V1ObjectMeta(name=name)
@@ -30,6 +28,10 @@ def create_namespace(api_instance, name):
     namespace = client.V1Namespace(metadata=metadata)
     namespace = api_instance.create_namespace(body=namespace)
     print("Namespace created")
+    
+def delete_deployment(api_instance, name, namespace):
+    api_instance.delete_namespaced_deployment(name=name, namespace=namespace, grace_period_seconds=0)
+    print("Deployment deleted")
     
 if __name__ == "__main__":
     config.load_kube_config(config_file="/home/ananthkk/admin.conf")

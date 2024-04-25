@@ -23,7 +23,7 @@ class ControlDB:
         connection = sqlite3.connect(self.DB_FILE)
         cursor = connection.cursor()
         cursor.execute(f'CREATE TABLE IF NOT EXISTS organizations (org TEXT PRIMARY KEY)')
-        cursor.execute(f'CREATE TABLE IF NOT EXISTS endpoints (org TEXT, endpoint TEXT, ip TEXT, PRIMARY KEY (org, endpoint), FOREIGN KEY (org) REFERENCES organizations)') # port is the port to which the service is forwarded on localhost
+        cursor.execute(f'CREATE TABLE IF NOT EXISTS endpoints (org TEXT, endpoint TEXT, ip TEXT, image TEXT, replicas INTEGER, PRIMARY KEY (org, endpoint), FOREIGN KEY (org) REFERENCES organizations)') 
         connection.commit()
         cursor.close()
         connection.close()
@@ -36,10 +36,10 @@ class ControlDB:
         cursor.close()
         connection.close()
         
-    def add_endpoint(self, org: str, endpoint: str, ip: str, port_range = (30000, 32767)):
+    def add_endpoint(self, org: str, endpoint: str, ip: str, image: str, replicas: int):
         connection = sqlite3.connect(self.DB_FILE)
         cursor = connection.cursor()
-        cursor.execute(f'INSERT INTO endpoints (org, endpoint, ip) VALUES ("{org}", "{endpoint}", "{ip}")')
+        cursor.execute(f'INSERT INTO endpoints (org, endpoint, ip, image, replicas) VALUES ("{org}", "{endpoint}", "{ip}", "{image}", {replicas})')
         connection.commit()
         cursor.close()
         connection.close()
@@ -62,10 +62,10 @@ class ControlDB:
         connection.close()
         return ret
         
-    def get_endpoint_ip(self, org: str, endpoint: str):
+    def get_endpoint(self, org: str, endpoint: str):
         connection = sqlite3.connect(self.DB_FILE)
         cursor = connection.cursor()
-        cursor.execute(f'SELECT ip FROM endpoints WHERE org = "{org}" AND endpoint = "{endpoint}"')
+        cursor.execute(f'SELECT ip, image, replicas FROM endpoints WHERE org = "{org}" AND endpoint = "{endpoint}"')
         ret = cursor.fetchone()
         cursor.close()
         connection.close()
