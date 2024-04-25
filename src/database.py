@@ -69,7 +69,7 @@ class ControlDB:
         ret = cursor.fetchone()
         cursor.close()
         connection.close()
-        return ret[0] if ret is not None else None
+        return ret if ret is not None else None
     
     def iterate_over_endpoints(self):
         connection = sqlite3.connect(self.DB_FILE)

@@ -3,7 +3,7 @@ from kube_utils import create_deployment, create_service, create_namespace
 from kubernetes.client import CoreV1Api, AppsV1Api
 import subprocess
 from config import KUBECONF, TARGET_PORT, SERVICE_PORT
-from multiprocessing_utils import SharedLock
+from readerwriterlock import rwlock
 import time
     
 def get_ip():
@@ -23,6 +23,6 @@ def register_endpoint(api_instance_core: CoreV1Api, api_instance_app: AppsV1Api,
 
 def sync_with_db(database, is_deployed, access_times):
     for org, endpoint, _, _, _ in database.iterate_over_endpoints():
-        is_deployed[(org, endpoint)] = (SharedLock(), False)
+        is_deployed[(org, endpoint)] = (rwlock.RWLockWrite(), False)
         access_times[(org, endpoint)] = time.time()
     return is_deployed, access_times
