@@ -3,6 +3,8 @@ from kube_utils import create_deployment, create_service, create_namespace
 from kubernetes.client import CoreV1Api, AppsV1Api
 import subprocess
 from config import KUBECONF, TARGET_PORT, SERVICE_PORT
+from multiprocessing_utils import SharedLock
+import time
     
 def get_ip():
     return subprocess.check_output(['hostname', '-I']).decode('utf-8').split()[0]
@@ -18,10 +20,9 @@ def register_endpoint(api_instance_core: CoreV1Api, api_instance_app: AppsV1Api,
     ip = create_service(api_instance_core, endpoint, org, endpoint, port, target_port)
     database.add_endpoint(org, endpoint, ip, image, replicas)
     return True
-     
-def get_free_port(api_instance_core: CoreV1Api):
-    ports = [int(service.spec.ports[0].node_port) for service in api_instance_core.list_service_for_all_namespaces().items]
-    for port in range(30000, 32767):
-        if port not in ports:
-            return port
-    return None
+
+def sync_with_db(database, is_deployed, access_times):
+    for org, endpoint, _, _, _ in database.iterate_over_endpoints():
+        is_deployed[(org, endpoint)] = (SharedLock(), False)
+        access_times[(org, endpoint)] = time.time()
+    return is_deployed, access_times

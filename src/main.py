@@ -5,7 +5,7 @@ from database import ControlDB
 import requests
 import json
 from package import DOCKER_REGISTRY_IP, DOCKER_REGISTRY_PORT
-from utils import get_ip, register_endpoint
+from utils import get_ip, register_endpoint, sync_with_db
 from config import DATABASE_FILE, SERVER_PORT, KUBECONF, SERVICE_PORT
 from multiprocessing_utils import SharedLock
 from kube_utils import create_deployment
@@ -69,5 +69,6 @@ def index1():
 
 if __name__ == '__main__':
    #  register_endpoint(v1_core, v1_app, 'adi', 'abcd', database, f'{DOCKER_REGISTRY_IP}:{DOCKER_REGISTRY_PORT}/test_app')
+    sync_with_db(database, is_deployed, access_times)
     multiprocessing.Process(target=optimize_deployments, args=(v1_core, v1_app)).start()
     app.run(host=SERVER_IP, port=SERVER_PORT)

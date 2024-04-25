@@ -70,6 +70,15 @@ class ControlDB:
         cursor.close()
         connection.close()
         return ret[0] if ret is not None else None
+    
+    def iterate_over_endpoints(self):
+        connection = sqlite3.connect(self.DB_FILE)
+        cursor = connection.cursor()
+        cursor.execute(f'SELECT org, endpoint, ip, image, replicas FROM endpoints')
+        for row in cursor:
+            yield row
+        cursor.close()
+        connection.close()
 
 if __name__ == "__main__":
     db = ControlDB(restart = False)
