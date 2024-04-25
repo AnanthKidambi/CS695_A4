@@ -13,17 +13,13 @@ spec:
   template:
     metadata:
       labels:
-        app: my-app
+        app: my-app 
     spec:
       containers:
       - name: my-app
-        image: 10.129.27.120:5000/test_app
+        image: 10.129.131.184:5000/test_app
         imagePullPolicy: Always
         ports:
         - containerPort: 9376     
-        resources:
-          limits:
-            cpu: "0.5"
-            memory: "512Mi"
-        # command: ["python3", "src/.interface.py", "9376", "org1"]
-        command: ["sleep", "infinity"]
+        command: ["python3", "src/.interface.py", "9376", "org1"]
+          #command: ["sleep", "infinity"]

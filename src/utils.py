@@ -1,5 +1,5 @@
 from database import ControlDB
-from kube_utils import create_deployment, create_service, create_namespace, service_port_forward
+from kube_utils import create_deployment, create_service, create_namespace 
 from kubernetes.client import CoreV1Api, AppsV1Api
 import subprocess
 from config import KUBECONF, TARGET_PORT, SERVICE_PORT

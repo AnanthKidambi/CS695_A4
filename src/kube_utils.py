@@ -20,7 +20,7 @@ def create_deployment(api_instance, name, namespace, image, replicas, container_
     metadata = client.V1ObjectMeta(name=name)
     container = client.V1Container(name=name, image=image, ports=[client.V1ContainerPort(container_port=container_port)], command=cmd)
     template = client.V1PodTemplateSpec(metadata=client.V1ObjectMeta(labels={"app": name}), spec=client.V1PodSpec(containers=[container]))
-    spec = client.V1DeploymentSpec(replicas=1, template=template, selector=client.V1LabelSelector(match_labels={"app": name}))
+    spec = client.V1DeploymentSpec(replicas=replicas, template=template, selector=client.V1LabelSelector(match_labels={"app": name}))
     deployment = client.V1Deployment(metadata=metadata, spec=spec)
     deployment = api_instance.create_namespaced_deployment(namespace=namespace, body=deployment)
     print("Deployment created")

@@ -5,7 +5,7 @@ import os
 import shutil
 import docker
 
-DOCKER_REGISTRY_IP = "10.129.27.120"
+DOCKER_REGISTRY_IP = "10.129.131.184"
 DOCKER_REGISTRY_PORT = 5000
 
 def check_package(app_dir: str):
@@ -50,5 +50,5 @@ def package(app_dir: str, docker_repo: str, docker_tag: str = None, push = True,
     return docker_image
     
 if __name__ == "__main__":
-    # package('./images/forward_app', f'{DOCKER_REGISTRY_IP}:{DOCKER_REGISTRY_PORT}', add_interface=False, check_files=False)
+    package('./images/forward_app', f'{DOCKER_REGISTRY_IP}:{DOCKER_REGISTRY_PORT}', add_interface=False, check_files=False)
     package('./images/test_app', f'{DOCKER_REGISTRY_IP}:{DOCKER_REGISTRY_PORT}')

@@ -1,4 +1,4 @@
-KUBECONF = '/home/ananthkk/admin.conf'
+KUBECONF = '/home/vm1/.kube/config'
 
 SERVER_PORT = 8887
 SERVICE_PORT = 80
