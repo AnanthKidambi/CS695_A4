@@ -19,6 +19,7 @@ app = Flask(__name__)
 config.load_kube_config(KUBECONF)
 v1_core = client.CoreV1Api()
 v1_app = client.AppsV1Api()
+v1_scale = client.AutoscalingV1Api
 
 database = ControlDB(file = DATABASE_FILE, restart=False)
 
@@ -63,7 +64,7 @@ def index1():
     endpoint = payload['endpoint']
     image = payload['image']
     replicas = int(payload['replicas'])
-    if not register_endpoint(v1_core, v1_app, org, endpoint, database, image, replicas):
+    if not register_endpoint(v1_core, v1_app, v1_scale, org, endpoint, database, image, replicas):
         abort(409)
     else:
         is_deployed[(org, endpoint)] = [rwlock.RWLockWrite(), True]

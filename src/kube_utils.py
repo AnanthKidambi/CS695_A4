@@ -13,10 +13,11 @@ def create_service(api_instance, name, namespace, app_name, port, target_port):
     print("Service created")
     return service.spec.cluster_ip
 
-def create_deployment(api_instance, name, namespace, image, replicas, container_port, cmd):
+def create_deployment(api_instance:client.AppsV1Api, name, namespace, image, replicas, container_port, cmd, cpu_limit=100):
     print(f"Creating deployment with name {name}, namespace {namespace}, image {image}, replicas {replicas}, container_port {container_port}, cmd {cmd}")
     metadata = client.V1ObjectMeta(name=name)
-    container = client.V1Container(name=name, image=image, ports=[client.V1ContainerPort(container_port=container_port)], command=cmd)
+    resource = client.V1ResourceRequirements(limits={"cpu": f"{cpu_limit}m"})
+    container = client.V1Container(name=name, image=image, ports=[client.V1ContainerPort(container_port=container_port)], command=cmd, resources=resource)
     template = client.V1PodTemplateSpec(metadata=client.V1ObjectMeta(labels={"app": name}), spec=client.V1PodSpec(containers=[container]))
     spec = client.V1DeploymentSpec(replicas=replicas, template=template, selector=client.V1LabelSelector(match_labels={"app": name}))
     deployment = client.V1Deployment(metadata=metadata, spec=spec)
@@ -32,6 +33,13 @@ def create_namespace(api_instance, name):
 def delete_deployment(api_instance, name, namespace):
     api_instance.delete_namespaced_deployment(name=name, namespace=namespace, grace_period_seconds=0)
     print("Deployment deleted")
+    
+def create_autoscaler(api_instance:client.AutoscalingV1Api, name, namespace, min_replicas=1, max_replicas=10, target_cpu_percentage_utilization=10):
+    metadata = client.V1ObjectMeta(name=name)
+    ref = client.V1CrossVersionObjectReference(kind="Deployment", name=name)
+    spec = client.V1HorizontalPodAutoscalerSpec(max_replicas=max_replicas, min_replicas=min_replicas, target_cpu_utilization_percentage=target_cpu_percentage_utilization, scale_target_ref=ref)
+    scaler = client.V1HorizontalPodAutoscaler(metadata=metadata, spec=spec)
+    api_instance.create_namespaced_horizontal_pod_autoscaler(namespace=namespace, body=scaler)
     
 if __name__ == "__main__":
     config.load_kube_config(config_file="/home/ananthkk/admin.conf")
