@@ -6,7 +6,7 @@ kind: Deployment
 metadata:
   name: my-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: my-app
@@ -22,4 +22,7 @@ spec:
         ports:
         - containerPort: 9376     
         command: ["python3", "src/.interface.py", "9376", "org1"]
-          #command: ["sleep", "infinity"]
+        resources:
+          requests:
+          limits: 
+            cpu: 100m

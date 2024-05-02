@@ -17,7 +17,6 @@ def optimize_deployments():
         # iterate through the dictionary and find deployments that are idle
         curr_time = time.time()
         idle_deployments = []
-        print(is_deployed, access_times)
         for key, value in access_times.items():
             if curr_time - value > MAX_IDLE_TIME:
                 idle_deployments.append(key)
