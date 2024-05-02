@@ -3,8 +3,8 @@ import threading
 import time
 
 # spawn multiple threads and send http requests to the server
-SERVER_IP = '10.103.224.60'
-SERVER_PORT = 80
+SERVER_IP = '10.129.27.120'
+SERVER_PORT = 8887
 NUM_THREADS = 100
 NUM_ITER = 10
 
@@ -12,15 +12,15 @@ def send_request(page, trigger, json_data):
     for i in range(NUM_ITER):
         json_data['iter'] = i
         start = time.time_ns()
-        #response = requests.post(f'http://{SERVER_IP}:{SERVER_PORT}/{page}/{trigger}', json=json_data)
-        response = requests.post(f'http://{SERVER_IP}:{SERVER_PORT}/', json = json_data)
+        response = requests.post(f'http://{SERVER_IP}:{SERVER_PORT}/{page}/{trigger}', json=json_data)
+        #response = requests.post(f'http://{SERVER_IP}:{SERVER_PORT}/', json = json_data)
         end = time.time_ns()
         print(f'Sent: {json_data}, Received: {response.text}, latency: {(end - start)/10**6} ms')
     
 # create NUM_THREADS threads
 threads = []
 for i in range(NUM_THREADS):
-    thread = threading.Thread(target=send_request, args=('mytest', 'test1', {'thread': i}))
+    thread = threading.Thread(target=send_request, args=('adi', 'abcd', {'thread': i}))
     threads.append(thread)
     thread.start()
 

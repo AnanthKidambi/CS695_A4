@@ -34,18 +34,26 @@ def delete_deployment(api_instance, name, namespace):
     api_instance.delete_namespaced_deployment(name=name, namespace=namespace, grace_period_seconds=0)
     print("Deployment deleted")
     
-def create_autoscaler(api_instance:client.AutoscalingV1Api, name, namespace, min_replicas=1, max_replicas=10, target_cpu_percentage_utilization=10):
+def create_autoscaler(api_instance:client.AutoscalingV2Api, name, namespace, min_replicas=1, max_replicas=10, target_cpu_percentage_utilization=10):
+    # metadata = client.V1ObjectMeta(name=name)
+    # ref = client.V1CrossVersionObjectReference(api_version="extensions/v1beta1", kind="Deployment", name=name)
+    # spec = client.V1HorizontalPodAutoscalerSpec(max_replicas=max_replicas, min_replicas=min_replicas, target_cpu_utilization_percentage=target_cpu_percentage_utilization, scale_target_ref=ref)
+    # scaler = client.V1HorizontalPodAutoscaler(api_version="autoscaling/v1", metadata=metadata, spec=spec)
+    # api_instance.create_namespaced_horizontal_pod_autoscaler(namespace=namespace, body=scaler)
     metadata = client.V1ObjectMeta(name=name)
-    ref = client.V1CrossVersionObjectReference(kind="Deployment", name=name)
-    spec = client.V1HorizontalPodAutoscalerSpec(max_replicas=max_replicas, min_replicas=min_replicas, target_cpu_utilization_percentage=target_cpu_percentage_utilization, scale_target_ref=ref)
-    scaler = client.V1HorizontalPodAutoscaler(metadata=metadata, spec=spec)
+    metrics_spec = client.V2MetricSpec(type="Resource", resource=client.V2ResourceMetricSource(name="cpu", target=client.V2MetricTarget(type='Utilization', average_utilization=target_cpu_percentage_utilization)))
+    ref = client.V2CrossVersionObjectReference(api_version="apps/v1", kind="Deployment", name=name)
+    spec = client.V2HorizontalPodAutoscalerSpec(max_replicas=max_replicas, min_replicas=min_replicas, metrics=[metrics_spec], scale_target_ref=ref)
+    scaler = client.V2HorizontalPodAutoscaler(metadata=metadata, spec=spec)
     api_instance.create_namespaced_horizontal_pod_autoscaler(namespace=namespace, body=scaler)
-    
+
 if __name__ == "__main__":
-    config.load_kube_config(config_file="/home/ananthkk/admin.conf")
+    config.load_kube_config(config_file="/home/vm1/.kube/config")
     api_instance_app = client.AppsV1Api()
     api_instance_core = client.CoreV1Api()
+    api_instance_scale = client.AutoscalingV2Api()
     create_namespace(api_instance_core, "my-namespace")
-    create_deployment(api_instance_app, "my-app", "my-namespace", "10.129.27.120:5000/test_app", 2, 9376, ["python3", "/src/.interface.py", "9376", "hello"])
+    create_deployment(api_instance_app, "my-app", "my-namespace", "10.129.131.184:5000/test_app", 1, 9376, ["python3", "/src/.interface.py", "9376", "hello"])
     ip = create_service(api_instance_core, "my-service", "my-namespace", "my-app", 80, 9376)
     print(ip)
+    create_autoscaler(api_instance_scale, "my-app", "my-namespace")
