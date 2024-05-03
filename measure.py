@@ -8,10 +8,12 @@ from matplotlib import pyplot as plt
 SERVER_IP = '10.129.27.120'
 SERVER_PORT = 8887
 NUM_THREADS = 10
-NUM_ITER = 20
+NUM_ITER = 50
 
 BACKOFF = 1
 MAX_RESPONSE_WAIT_TIME = 30
+
+SIZE = 100
 
 def send_request(page, trigger, json_data, ret):
     # start times and latencies are in nanoseconds
@@ -35,11 +37,15 @@ def send_request(page, trigger, json_data, ret):
             latencies.append((end - start))
             start_times.append(start)
             i += 1
-        except Exception as e:
+        except requests.exceptions.ConnectionError as e:
             print(e)
             print("Failed 2")
-            num_failed += 1
+            # num_failed += 1
             time.sleep(BACKOFF)
+        except Exception as e:
+            print(e)
+            print("Failed 3")
+            num_failed += 1
     ret[0], ret[1], ret[2] = start_times, latencies, num_failed
     
     
@@ -47,7 +53,7 @@ def send_request(page, trigger, json_data, ret):
 threads = []
 return_vals = [[None]*3 for i in range(NUM_THREADS)]
 for i in range(NUM_THREADS):
-    thread = threading.Thread(target=send_request, args=('adi', 'cpu-load', {'thread': i, 'size': 10}, return_vals[i]))
+    thread = threading.Thread(target=send_request, args=('adi', 'cpu-load', {'thread': i, 'size': SIZE}, return_vals[i]))
     threads.append(thread)
     thread.start()
 
@@ -58,12 +64,23 @@ try:
     failed = np.array([r[2] for r in return_vals])
     start_times = np.concatenate([r[0] for r in return_vals])
     latencies = np.concatenate([r[1] for r in return_vals])
+    print(f'Mean Latency: {latencies.mean()/1e6} ms')
+    print(f'Median Latency: {np.median(latencies)/1e6} ms')
     # sort start_times and latencies based on sort_times
-    start_times_sorted, latencies_sorted = zip(*sorted(zip(start_times, latencies)))
-    start_times_sorted, latencies_sorted = np.array(start_times), np.array(latencies)
-    # plt.scatter((start_times-start_times.min())/1e6, latencies/1e6)
-    plt.plot((start_times_sorted-start_times_sorted.min())/1e6, latencies_sorted/1e6)
-    plt.savefig('plots/latency.png')
+    start_times_sorted, sorted_indices = np.sort(start_times), np.argsort(start_times)
+    latencies_sorted = latencies[sorted_indices]
+    # plt.scatter((start_times-start_times.min())/1e9, latencies/1e6)
+    # plt.xlabel('Time (s)')
+    # plt.ylabel('Latency (ms)')
+    # plt.title('Latency vs Time With Autoscaling')
+    # plt.savefig('plots/latency_with_autoscaling_50_warm.png')
+    # plt.figure()
+    # plt.hist(latencies/1e6, bins=30)
+    # plt.xlabel('Latency (ms)')
+    # plt.title('Latency Histogram With Autoscaling')
+    # # plt.plot((start_times_sorted-start_times_sorted.min())/1e6, latencies_sorted/1e6)
+    # plt.savefig('plots/latency_with_autoscaling_hist_50_warm.png')
 finally:
     __import__('IPython').embed()
+    pass
 
