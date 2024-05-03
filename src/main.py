@@ -6,7 +6,7 @@ import requests
 import json
 from package import DOCKER_REGISTRY_IP, DOCKER_REGISTRY_PORT
 from utils import get_ip, register_endpoint, sync_with_db
-from config import DATABASE_FILE, SERVER_PORT, KUBECONF, SERVICE_PORT, TARGET_PORT
+from config import DATABASE_FILE, SERVER_PORT, KUBECONF, SERVICE_PORT, TARGET_PORT, MAX_RESPONSE_WAIT_TIME
 from readerwriterlock import rwlock
 from kube_utils import create_deployment
 import time
@@ -48,9 +48,9 @@ def index(page, trigger):
 
     access_times[(page, trigger)] = time.time()
     if request.method == 'GET':
-        res = requests.get(url, json=to_send['json'])
+        res = requests.get(url, json=to_send['json'], timeout = MAX_RESPONSE_WAIT_TIME)
     elif request.method == 'POST':
-        res = requests.post(url, json=to_send['json'])
+        res = requests.post(url, json=to_send['json'], timeout = MAX_RESPONSE_WAIT_TIME)
     else:
         abort(405)
     return json.loads(res.text)

@@ -14,9 +14,9 @@ def handler(request):
     num_threads = 10
     data = 'data'
     if 'num_writes' in request:
-        num_writes = request['num_writes']
+        num_writes = int(request['num_writes'])
     if 'num_threads' in request:
-        num_threads = request['num_threads']
+        num_threads = int(request['num_threads'])
     if 'data' in request:
         data = request['data']
     threads = []
