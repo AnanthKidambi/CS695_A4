@@ -14,10 +14,11 @@ RUN apt-get update
 RUN pip install requests 
 RUN apt install -y vim
 RUN pip install flask
+RUN pip install numpy
 
 # Make port 80 available to the world outside this container
-EXPOSE 9376
 EXPOSE 80
+EXPOSE 9376
 
 # Define environment variable
 # ENV NAME World
